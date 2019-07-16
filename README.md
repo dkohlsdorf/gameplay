@@ -1,0 +1,2 @@
+# gameplay
+A Go AI
