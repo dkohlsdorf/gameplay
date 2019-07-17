@@ -4,7 +4,9 @@ Board for the Game of GO
 REFERENCE: 
   Pumperla, Furguson: "Deep Learning And The Game Of Go", Manning, 2019
 '''
-from gomodel import Player, BoardPosition, Region 
+from gogame.model import Player, BoardPosition, Region 
+
+import copy 
 
 
 class Move():
@@ -13,6 +15,7 @@ class Move():
         self.pos = pos
         self.passed = passed
         self.resigned = resigned
+        self.is_play = self.pos is not None
 
     @classmethod
     def play(cls, pos):
@@ -86,5 +89,30 @@ class Board():
                 if neighbor_region is not connected:
                     neighbor_region.add_liberty(point)
             self.grid[pos] = None
-    
-print("There y'a GO!")
+
+
+class GameState:
+
+    def __init__(self, board, next_player, prev, move):
+        self.board = board
+        self.next_player = next_player
+        self.prev = prev
+        self.last_move = move 
+
+    def apply_move(self, move):
+        if move.is_play:
+            next_board = copy.deepcopy(self.board)
+            next_board.place_stone(self.next_player, move.pos)
+        else:
+            next_board = self.board
+        return GameState(next_board, self.next_player.other, self, move)
+
+    def won(self):
+        if self.last_move is None:
+            return False
+        if self.last_move.resigned:
+            return True
+        penultimate = self.prev.last_move
+        if penultimate is None:
+            return False
+        return self.last_move.passed and penultimate.passed
