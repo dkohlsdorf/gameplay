@@ -66,7 +66,7 @@ class Board():
             if other.n_liberties == 0:
                 self.remove(other)
         
-    def on_grid(seld, pos):
+    def on_grid(self, pos):
         in_rows = 1 <= pos.row <= self.rows
         in_cols = 1 <= pos.col <= self.cols
         return in_rows and in_cols
@@ -112,6 +112,7 @@ class Board():
             return other_corners + my_corners == 4 
         return my_corners >= 3
 
+
 class GameState:
 
     def __init__(self, board, next_player, prev, move):
@@ -119,11 +120,18 @@ class GameState:
         self.next_player = next_player
         self.prev = prev
         self.last_move = move 
+    
+    @classmethod
+    def new_game(cls, board_size):
+        if isinstance(board_size, int):
+            board_size = (board_size, board_size)
+        board = Board(*board_size)
+        return GameState(board, Player.black, None, None)
 
     def apply_move(self, move):
         if move.is_play:
             next_board = copy.deepcopy(self.board)
-            next_board.place_stone(self.next_player, move.pos)
+            next_board.place(self.next_player, move.pos)
         else:
             next_board = self.board
         return GameState(next_board, self.next_player.other, self, move)
@@ -166,9 +174,6 @@ class GameState:
     def is_valid(self, move):
         if self.won():
             return False
-        if move.passed or move.is_resigned:
+        if move.passed or move.resigned:
             return True 
-        empty   = self.board.get_color(move.pos) is None  
-        selfcap = self.is_self_capture(self.next_player, move)
-        ko      = self.violate_ko(self.next_player, move)
-        return empty and not selfcap and not ko
+        return self.board.get_color(move.pos) is None and not self.is_self_capture(self.next_player, move) and not self.violate_ko(self.next_player, move)
