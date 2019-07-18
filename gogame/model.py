@@ -30,6 +30,15 @@ class BoardPosition(namedtuple('Point', 'row col')):
             BoardPosition(self.row    , self.col + 1)          
         ]
 
+    def corners(self):
+        return [
+            BoardPosition(self.row - 1, self.col - 1),
+            BoardPosition(self.row - 1, self.col + 1),
+            BoardPosition(self.row + 1, self.col - 1),
+            BoardPosition(self.row + 1, self.col + 1)
+        ]
+
+
 
 class Region:
 

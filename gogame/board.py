@@ -81,15 +81,36 @@ class Board():
         return self.grid.get(pos)
 
     def remove(self, connected):
-        for point in connected.stones:
-            for neighbor in point.neighbors():
+        for pos in connected.stones:
+            for neighbor in pos.neighbors():
                 neighbor_region = self.get_connected(neighbor)
                 if neighbor_region is None:
                     continue
                 if neighbor_region is not connected:
-                    neighbor_region.add_liberty(point)
+                    neighbor_region.add_liberty(pos)
             self.grid[pos] = None
 
+    def is_eye(self, pos, color):
+        if self.get_color(pos) is not None:
+            return False
+        for neighbor in pos.neighbors():
+            if self.on_grid(neighbor):
+                neighbor_color = self.get_color(neighbor)
+                if neighbor_color != color:
+                    return False
+        my_corners    = 0
+        other_corners = 0
+        corners = pos.corners()
+        for corner in corners:
+            if self.on_grid(corner):
+                corner_color = self.get_color(corner)
+                if corner_color == color:
+                    my_corners += 1
+                else:
+                    other_corners += 1
+        if other_corners > 0:
+            return other_corners + my_corners == 4 
+        return my_corners >= 3
 
 class GameState:
 
@@ -116,3 +137,38 @@ class GameState:
         if penultimate is None:
             return False
         return self.last_move.passed and penultimate.passed
+
+    def is_self_capture(self, player, move):
+        if not move.is_play:
+            return False
+        next_board = copy.deepcopy(self.board)
+        next_board.place(player, move.pos)
+        connected = next_board.get_connected(move.pos)
+        return connected.n_liberties == 0
+
+    @property
+    def situation(self):
+        return self.next_player, self.board
+
+    def violate_ko(self, player, move):
+        if not move.is_play:
+            return False
+        next_board = copy.deepcopy(self.board)
+        next_board.place(player, move.pos)
+        next_situation = (player.other, next_board)
+        past = self.prev
+        while past is not None:
+            if past.situation == next_situation:
+                return True
+            past = past.prev
+        return False
+
+    def is_valid(self, move):
+        if self.won():
+            return False
+        if move.passed or move.is_resigned:
+            return True 
+        empty   = self.board.get_color(move.pos) is None  
+        selfcap = self.is_self_capture(self.next_player, move)
+        ko      = self.violate_ko(self.next_player, move)
+        return empty and not selfcap and not ko
