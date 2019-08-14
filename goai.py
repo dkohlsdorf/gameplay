@@ -7,7 +7,6 @@ from gobots.naive import *
 print("There y'a GO!")
 
 def main():
-    size = 9
     game = GameState.new_game(9)
     bots = {
         Player.white: RandomBot(),

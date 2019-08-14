@@ -177,3 +177,10 @@ class GameState:
         if move.passed or move.resigned:
             return True 
         return self.board.get_color(move.pos) is None and not self.is_self_capture(self.next_player, move) and not self.violate_ko(self.next_player, move)
+
+    def valid_moves(self):
+        for row in range(1, self.board.rows):
+            for col in range(1, self.board.cols):
+                move = Move.play(BoardPosition(row, col))
+                if self.is_valid(move):
+                    yield move
