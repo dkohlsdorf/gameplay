@@ -5,7 +5,7 @@ REFERENCE:
   Pumperla, Furguson: "Deep Learning And The Game Of Go", Manning, 2019
 '''
 from gogame.model import Player, BoardPosition, Region 
-
+from gogame.scoring import game_result
 import copy 
 
 
@@ -145,6 +145,14 @@ class GameState:
         if penultimate is None:
             return False
         return self.last_move.passed and penultimate.passed
+
+    def winner(self):
+        if not self.won():
+            return None
+        if self.last_move.resigned:
+            return self.next_player
+        result = game_result(self)
+        return result.winner
 
     def is_self_capture(self, player, move):
         if not move.is_play:
