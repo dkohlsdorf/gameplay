@@ -3,7 +3,7 @@ import enum
 from collections import namedtuple
 from gogame.model import BoardPosition, Player
 
-KOMI = 7.5
+KOMI = 0.0 #7.5
 
 class GameResult(namedtuple('GameResult', 'b w komi')):
     @property

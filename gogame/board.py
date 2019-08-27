@@ -16,7 +16,7 @@ class Move():
         self.passed = passed
         self.resigned = resigned
         self.is_play = self.pos is not None
-
+    
     @classmethod
     def play(cls, pos):
         return Move(pos = pos)
@@ -28,7 +28,7 @@ class Move():
     @classmethod
     def resign(cls):
         return Move(resigned = True)
-    
+
 
 class Board():
 

@@ -6,9 +6,43 @@ from gogame.model import Player
 from gogame.board import Move
 from gobots.agent import Agent
 from gobots.naive import RandomBot
+from gogame.utils import *
 
 
-class Node:
+
+def fmt(x):
+    if x is Player.black:
+        return 'B'
+    if x is Player.white:
+        return 'W'
+    if x.passed:
+        return 'pass'
+    if x.resigned:
+        return 'resign'
+    return coords_from_point(x.pos)
+
+
+def show_tree(node, indent='', max_depth=3):
+    if max_depth < 0:
+        return
+    if node is None:
+        return
+    if node.parent is None:
+        print('%sroot' % indent)
+    else:
+        player = node.parent.state.next_player
+        move = node.move
+        print('%s%s %s %d %.3f' % (
+            indent, fmt(player), fmt(move),
+            node.n_rollouts,
+            node.winning_frac(player),
+        ))
+    for child in sorted(node.children, key=lambda n: n.n_rollouts, reverse=True):
+        show_tree(child, indent + '  ', max_depth - 1)
+
+
+
+class Node(object):
 
     def __init__(self, state, parent = None, move = None):
         self.state = state
@@ -52,12 +86,11 @@ class MonteCarloTreeSearchAgent(Agent):
 
     def select_child(self, node):
         total_rollouts = sum(child.n_rollouts for child in node.children)
-        log_rollouts   = math.log(total_rollouts)
-
+        log_rollouts   = math.log(total_rollouts + 1.0)
         best_score = -1
         for child in node.children:
             wins        = child.winning_frac(node.state.next_player)
-            exploration = math.sqrt(log_rollouts / child.num_rollouts)
+            exploration = math.sqrt(log_rollouts / child.n_rollouts)
             score       = wins + self.temperature * exploration
             if score > best_score:
                 best_score = score
@@ -68,14 +101,14 @@ class MonteCarloTreeSearchAgent(Agent):
         root = Node(state)
         for i in range(self.n_rollouts):
             node = root
-            while (not node.is_terminal()) and (not node.has_potential_children):
+            while (not node.is_terminal()) and (not node.has_potential_children()):
                 node = self.select_child(node)
             if node.has_potential_children():
                 node = node.add_random_child()
             winner = MonteCarloTreeSearchAgent.simulate(node.state)
             while node is not None:
                 node.record_win(winner)
-                node = node.parent
+                node = node.parent    
         scored = [(c.winning_frac(state.next_player), c.move, c.n_rollouts)
             for c in root.children]
         scored.sort(key=lambda x: x[0], reverse=True)
@@ -87,6 +120,7 @@ class MonteCarloTreeSearchAgent(Agent):
                 best_pct = child_pct
                 best_move = child.move
         print('Select move %s with win pct %.3f' % (best_move, best_pct))
+        show_tree(root)
         return best_move
 
     @staticmethod

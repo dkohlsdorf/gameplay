@@ -8,6 +8,11 @@ STONE_TO_CHAR = {
     Player.white: 'o'
 }
 
+def coords_from_point(point):
+    return '%s%d' % (
+        COLS[point.col - 1],
+        point.row
+    )
 
 def print_move(player, move):
     if move.passed:
